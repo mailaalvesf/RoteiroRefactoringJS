@@ -5,10 +5,16 @@ function gerarFaturaStr(fatura, pecas) {
   let creditos = 0;
   let faturaStr = `Fatura ${fatura.cliente}\n`;
 
-  //funcao nova aqui, substituida
-  function calcularTotalApresentacao(apre, peca) {
+  // Função query adicionada
+  function getPeca(apresentacao) {
+    return pecas[apresentacao.id];
+  }
+
+  // A função agora recebe apenas 'apre'
+  function calcularTotalApresentacao(apre) {
     let total = 0;
-    switch (peca.tipo) {
+    // Uso de getPeca(apre) em vez de peca
+    switch (getPeca(apre).tipo) {
       case "tragedia":
         total = 40000;
         if (apre.audiencia > 30) {
@@ -23,7 +29,7 @@ function gerarFaturaStr(fatura, pecas) {
         total += 300 * apre.audiencia;
         break;
       default:
-        throw new Error(`Peça desconhecida: ${peca.tipo}`);
+        throw new Error(`Peça desconhecida: ${getPeca(apre).tipo}`);
     }
     return total;
   }
@@ -33,18 +39,18 @@ function gerarFaturaStr(fatura, pecas) {
       minimumFractionDigits: 2 }).format;
 
   for (let apre of fatura.apresentacoes) {
-    const peca = pecas[apre.id];
+    // A variável 'const peca = pecas[apre.id];' foi removida!
     
-    // chama a nova funcao
-    let total = calcularTotalApresentacao(apre, peca);
+    // Passamos apenas 'apre'
+    let total = calcularTotalApresentacao(apre);
 
-    // creditos de vol de publico
+    // créditos para volume de público
     creditos += Math.max(apre.audiencia - 30, 0);
-    // crédito extra para comédias (10 para cada espectador)
-    if ("comedia" === peca.tipo) creditos += Math.floor(apre.audiencia / 5);
+    // crédito extra para comédias usando a query getPeca
+    if ("comedia" === getPeca(apre).tipo) creditos += Math.floor(apre.audiencia / 5);
 
-    // formata a linha da fatura
-    faturaStr += `  ${peca.nome}: ${formato(total / 100)} (${apre.audiencia} assentos)\n`;
+    // formata a linha da fatura usando a query getPeca
+    faturaStr += `  ${getPeca(apre).nome}: ${formato(total / 100)} (${apre.audiencia} assentos)\n`;
     totalFatura += total;
   }
   
